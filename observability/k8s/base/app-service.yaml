@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: travel-planner
+  namespace: travel-observability
+spec:
+  selector:
+    app: travel-planner
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

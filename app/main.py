@@ -64,7 +64,7 @@ from langchain_core.messages import convert_to_messages
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import SpanKind
-from opentelemetry import _events, _logs, metrics, trace
+from opentelemetry import _logs, metrics, trace
 from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import (
     OTLPMetricExporter,
@@ -73,32 +73,51 @@ from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
     OTLPSpanExporter,
 )
 from opentelemetry.instrumentation.langchain import LangchainInstrumentor
-from opentelemetry.sdk._events import EventLoggerProvider
 from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk.resources import Resource
 import logging
+from opentelemetry.sdk._logs import LoggingHandler
 
 logging.basicConfig(level=logging.INFO)
+
 
 # Uncomment if debug logs are required (which are verbose)
 #logging.getLogger("httpx").setLevel(logging.DEBUG)
 #logging.getLogger("openai").setLevel(logging.DEBUG)
 
+def _build_resource() -> Resource:
+    resource_attrs: dict[str, str] = {
+        "service.name": os.getenv("OTEL_SERVICE_NAME", "travel-planner"),
+        "service.version": os.getenv("OTEL_SERVICE_VERSION", "0.1.0"),
+        "deployment.environment": os.getenv("OTEL_DEPLOYMENT_ENVIRONMENT", "dev"),
+    }
+
+    instance_id = os.getenv("OTEL_SERVICE_INSTANCE_ID")
+    if instance_id:
+        resource_attrs["service.instance.id"] = instance_id
+
+    return Resource.create(resource_attrs)
+
+
 # Configure tracing/metrics/logging once per process so exported data goes to OTLP.
-trace.set_tracer_provider(TracerProvider())
+resource = _build_resource()
+trace.set_tracer_provider(TracerProvider(resource=resource))
 tracer_provider = trace.get_tracer_provider()
 tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
 
 metric_reader = PeriodicExportingMetricReader(OTLPMetricExporter())
-metrics.set_meter_provider(MeterProvider(metric_readers=[metric_reader]))
+metrics.set_meter_provider(MeterProvider(resource=resource, metric_readers=[metric_reader]))
 
-_logs.set_logger_provider(LoggerProvider())
+_logs.set_logger_provider(LoggerProvider(resource=resource))
 _logs.get_logger_provider().add_log_record_processor(
     BatchLogRecordProcessor(OTLPLogExporter())
 )
-_events.set_event_logger_provider(EventLoggerProvider())
+logging.getLogger().addHandler(
+    LoggingHandler(level=logging.INFO, logger_provider=_logs.get_logger_provider())
+)
 
 instrumentor = LangchainInstrumentor()
 instrumentor.instrument()
@@ -778,9 +797,6 @@ def build_workflow(
 # ---------------------------------------------------------------------------
 # FastMCP Server Implementation
 # ---------------------------------------------------------------------------
-
-# Initialize OpenTelemetry on server startup
-LangchainInstrumentor().instrument()
 
 # Initialize Flask app
 app = Flask(__name__)

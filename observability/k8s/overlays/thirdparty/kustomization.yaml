@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: travel-observability
+resources:
+  - ../../base
+
+configMapGenerator:
+  - name: otel-collector-config
+    files:
+      - collector-config.yaml=../../../collector/profiles/collector-config.thirdparty.yaml
+
+secretGenerator:
+  - name: collector-exporter-secrets
+    literals:
+      - THIRDPARTY_OTLP_TRACES_ENDPOINT=replace-me:4317
+      - THIRDPARTY_OTLP_METRICS_ENDPOINT=replace-me:4317
+      - THIRDPARTY_OTLPHTTP_LOGS_ENDPOINT=https://replace-me.example.com/v1/logs
+      - THIRDPARTY_OTLP_AUTH_HEADER=Bearer replace-me
+
+generatorOptions:
+  disableNameSuffixHash: true

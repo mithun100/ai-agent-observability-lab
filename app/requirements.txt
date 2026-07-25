@@ -7,8 +7,7 @@ deepeval
 flask>=3.0.0
 litellm==1.82.0
 requests>=2.31.0
-splunk-otel-instrumentation-langchain==0.1.7
-splunk-otel-genai-emitters-splunk==0.1.7
-splunk-otel-util-genai==0.1.9
-splunk-otel-util-genai-evals==0.1.8
-splunk-otel-genai-evals-deepeval==0.1.13
+opentelemetry-api>=1.27.0
+opentelemetry-sdk>=1.27.0
+opentelemetry-exporter-otlp-proto-grpc>=1.27.0
+opentelemetry-instrumentation-langchain>=0.48b0

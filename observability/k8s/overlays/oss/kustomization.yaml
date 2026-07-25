@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: travel-observability
+resources:
+  - ../../base
+
+configMapGenerator:
+  - name: otel-collector-config
+    files:
+      - collector-config.yaml=../../../collector/profiles/collector-config.oss.yaml
+
+secretGenerator:
+  - name: collector-exporter-secrets
+    literals:
+      - TEMPO_OTLP_ENDPOINT=tempo.travel-observability.svc.cluster.local:4317
+      - LOKI_OTLPHTTP_ENDPOINT=http://loki.travel-observability.svc.cluster.local:3100/otlp
+
+generatorOptions:
+  disableNameSuffixHash: true

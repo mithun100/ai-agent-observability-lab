@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: travel-planner
+  namespace: travel-observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: travel-planner
+  template:
+    metadata:
+      labels:
+        app: travel-planner
+    spec:
+      containers:
+        - name: travel-planner
+          image: travel-planner:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector.travel-observability.svc.cluster.local:4317
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: grpc
+            - name: OTEL_SERVICE_NAME
+              value: travel-planner
+            - name: OTEL_SERVICE_VERSION
+              value: "0.1.0"
+            - name: OTEL_DEPLOYMENT_ENVIRONMENT
+              value: k8s
+            - name: LLM_BACKEND
+              value: bedrock
+            - name: AWS_BEDROCK_MODEL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-llm-secrets
+                  key: AWS_BEDROCK_MODEL_ID
+                  optional: true
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-llm-secrets
+                  key: AWS_ACCESS_KEY_ID
+                  optional: true
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-llm-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+                  optional: true
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: app-llm-secrets
+                  key: AWS_DEFAULT_REGION
+                  optional: true

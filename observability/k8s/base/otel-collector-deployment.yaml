@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: travel-observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+        - name: otel-collector
+          image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.120.0
+          args: ["--config=/conf/collector-config.yaml"]
+          ports:
+            - containerPort: 4317
+            - containerPort: 4318
+            - containerPort: 9464
+            - containerPort: 13133
+          volumeMounts:
+            - name: collector-config
+              mountPath: /conf
+          envFrom:
+            - secretRef:
+                name: collector-exporter-secrets
+      volumes:
+        - name: collector-config
+          configMap:
+            name: otel-collector-config

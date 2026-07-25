@@ -1,0 +1,114 @@
+services:
+  otel-collector:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.120.0
+    command:
+      - "--config=/etc/otel/profiles/collector-config.${OBSERVABILITY_BACKEND:-oss}.yaml"
+    volumes:
+      - ../collector/profiles:/etc/otel/profiles:ro
+    environment:
+      SPLUNK_ACCESS_TOKEN: ${SPLUNK_ACCESS_TOKEN:-}
+      SPLUNK_REALM: ${SPLUNK_REALM:-}
+      SPLUNK_HEC_TOKEN: ${SPLUNK_HEC_TOKEN:-}
+      SPLUNK_HEC_ENDPOINT: ${SPLUNK_HEC_ENDPOINT:-}
+      SPLUNK_HEC_INDEX: ${SPLUNK_HEC_INDEX:-main}
+      TEMPO_OTLP_ENDPOINT: ${TEMPO_OTLP_ENDPOINT:-tempo:4317}
+      LOKI_OTLPHTTP_ENDPOINT: ${LOKI_OTLPHTTP_ENDPOINT:-http://loki:3100/otlp}
+      THIRDPARTY_OTLP_TRACES_ENDPOINT: ${THIRDPARTY_OTLP_TRACES_ENDPOINT:-}
+      THIRDPARTY_OTLP_METRICS_ENDPOINT: ${THIRDPARTY_OTLP_METRICS_ENDPOINT:-}
+      THIRDPARTY_OTLPHTTP_LOGS_ENDPOINT: ${THIRDPARTY_OTLPHTTP_LOGS_ENDPOINT:-}
+      THIRDPARTY_OTLP_AUTH_HEADER: ${THIRDPARTY_OTLP_AUTH_HEADER:-}
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "9464:9464"
+      - "13133:13133"
+    depends_on:
+      - tempo
+      - loki
+
+  travel-planner:
+    build:
+      context: ../../app
+    environment:
+      LLM_BACKEND: ${LLM_BACKEND:-nim}
+      AWS_BEDROCK_MODEL_ID: ${AWS_BEDROCK_MODEL_ID:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+      AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
+      AZURE_OPENAI_DEPLOYMENT_NAME: ${AZURE_OPENAI_DEPLOYMENT_NAME:-}
+      AZURE_OPENAI_API_VERSION: ${AZURE_OPENAI_API_VERSION:-}
+      OPENAI_API_KEY: ${NGC_API_KEY:-}
+      OPENAI_BASE_URL: ${NVIDIA_NIM_BASE_URL:-}
+      OPENAI_MODEL: ${NVIDIA_NIM_MODEL:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-grpc}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-travel-planner}
+      OTEL_SERVICE_VERSION: ${OTEL_SERVICE_VERSION:-0.1.0}
+      OTEL_DEPLOYMENT_ENVIRONMENT: ${OTEL_DEPLOYMENT_ENVIRONMENT:-local}
+      OTEL_SERVICE_INSTANCE_ID: ${OTEL_SERVICE_INSTANCE_ID:-local-dev}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - otel-collector
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  tempo:
+    image: grafana/tempo:2.7.1
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml:ro
+    ports:
+      - "3200:3200"
+      - "4319:4317"
+
+  loki:
+    image: grafana/loki:3.1.1
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    ports:
+      - "3100:3100"
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
+
+  langfuse-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${LANGFUSE_DB_USER:-langfuse}
+      POSTGRES_PASSWORD: ${LANGFUSE_DB_PASSWORD:-langfuse}
+      POSTGRES_DB: ${LANGFUSE_DB_NAME:-langfuse}
+
+  langfuse:
+    image: langfuse/langfuse:2
+    environment:
+      DATABASE_URL: postgresql://${LANGFUSE_DB_USER:-langfuse}:${LANGFUSE_DB_PASSWORD:-langfuse}@langfuse-postgres:5432/${LANGFUSE_DB_NAME:-langfuse}
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-change-me}
+      SALT: ${LANGFUSE_SALT:-change-me}
+      NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL:-http://localhost:3001}
+      TELEMETRY_ENABLED: "false"
+    ports:
+      - "3001:3000"
+    depends_on:
+      - langfuse-postgres
