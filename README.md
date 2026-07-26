@@ -142,6 +142,19 @@ OBSERVABILITY_BACKEND=oss ./observability/smoke/validate_backend.sh
 
 ## Kubernetes (Local)
 
+Important scope note:
+
+- This section is for local Docker Desktop Kubernetes only.
+- Do not use this local hybrid port-forward pattern for EKS, GKE, or AKS.
+
+Bootstrap Bedrock secret and local image first:
+
+```bash
+chmod +x scripts/k8s-secrets.sh
+./scripts/k8s-secrets.sh
+docker build -t travel-planner:latest app
+```
+
 Deploy OSS overlay:
 
 ```bash
@@ -153,6 +166,28 @@ Check rollout:
 ```bash
 kubectl get pods
 kubectl get svc
+```
+
+Test app via port-forward:
+
+```bash
+chmod +x scripts/k8s-forward-local.sh
+./scripts/k8s-forward-local.sh start all
+./scripts/k8s-forward-local.sh status
+```
+
+In another terminal:
+
+```bash
+curl -sS -X POST http://localhost:18080/travel/plan \
+  -H "Content-Type: application/json" \
+  -d '{"source":"Seattle","destination":"Tokyo","date":"2026-12-10"}'
+```
+
+Stop local forwards when done:
+
+```bash
+./scripts/k8s-forward-local.sh stop all
 ```
 
 ## Notes For Public Repo
