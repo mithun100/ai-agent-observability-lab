@@ -9,13 +9,13 @@
   "panels": [
     {
       "type": "timeseries",
-      "title": "OTel Collector Accepted Metric Points",
+      "title": "GenAI Operations Per Second",
       "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "targets": [
         {
-          "expr": "sum(rate(otelcol_receiver_accepted_metric_points[1m]))",
-          "legendFormat": "accepted_metric_points/s",
+          "expr": "sum by (gen_ai_provider_name, gen_ai_response_model) (increase(gen_ai_client_operation_duration_seconds_count[5m]))",
+          "legendFormat": "{{gen_ai_provider_name}} | {{gen_ai_response_model}}",
           "refId": "A"
         }
       ]
