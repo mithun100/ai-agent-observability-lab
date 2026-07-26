@@ -142,6 +142,14 @@ OBSERVABILITY_BACKEND=oss ./observability/smoke/validate_backend.sh
 
 ## Kubernetes (Local)
 
+Bootstrap Bedrock secret and local image first:
+
+```bash
+chmod +x scripts/k8s-secrets.sh
+./scripts/k8s-secrets.sh
+docker build -t travel-planner:latest app
+```
+
 Deploy OSS overlay:
 
 ```bash
@@ -153,6 +161,20 @@ Check rollout:
 ```bash
 kubectl get pods
 kubectl get svc
+```
+
+Test app via port-forward:
+
+```bash
+kubectl port-forward -n travel-observability svc/travel-planner 18080:8080
+```
+
+In another terminal:
+
+```bash
+curl -sS -X POST http://localhost:18080/travel/plan \
+  -H "Content-Type: application/json" \
+  -d '{"source":"Seattle","destination":"Tokyo","date":"2026-12-10"}'
 ```
 
 ## Notes For Public Repo

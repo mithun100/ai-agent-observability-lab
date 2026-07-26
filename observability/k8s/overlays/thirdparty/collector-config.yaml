@@ -1,0 +1,60 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 1000
+
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  resourcedetection:
+    detectors: [env, system]
+    timeout: 10s
+    override: false
+
+exporters:
+  otlp/thirdparty_traces:
+    endpoint: ${env:THIRDPARTY_OTLP_TRACES_ENDPOINT}
+    headers:
+      Authorization: ${env:THIRDPARTY_OTLP_AUTH_HEADER}
+
+  otlp/thirdparty_metrics:
+    endpoint: ${env:THIRDPARTY_OTLP_METRICS_ENDPOINT}
+    headers:
+      Authorization: ${env:THIRDPARTY_OTLP_AUTH_HEADER}
+
+  otlphttp/thirdparty_logs:
+    endpoint: ${env:THIRDPARTY_OTLPHTTP_LOGS_ENDPOINT}
+    headers:
+      Authorization: ${env:THIRDPARTY_OTLP_AUTH_HEADER}
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resourcedetection]
+      exporters: [otlp/thirdparty_traces]
+
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resourcedetection]
+      exporters: [otlp/thirdparty_metrics]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resourcedetection]
+      exporters: [otlphttp/thirdparty_logs]
