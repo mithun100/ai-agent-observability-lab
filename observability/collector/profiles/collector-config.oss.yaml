@@ -21,6 +21,10 @@ processors:
     timeout: 10s
     override: false
 
+  # Prometheus only accepts cumulative sums; the signaltometrics connector emits deltas.
+  deltatocumulative:
+    max_stale: 10m
+
 exporters:
   otlp/tempo:
     endpoint: ${env:TEMPO_OTLP_ENDPOINT}
@@ -37,17 +41,58 @@ extensions:
   health_check:
     endpoint: 0.0.0.0:13133
 
+connectors:
+  # Derives request/agent/model-call rate and latency metrics from traces.
+  spanmetrics:
+    histogram:
+      unit: s
+      explicit:
+        buckets: [250ms, 500ms, 1s, 2s, 3s, 5s, 8s, 10s, 15s, 20s, 30s, 60s]
+    dimensions:
+      - name: gen_ai.operation.name
+      - name: gen_ai.request.model
+      - name: traceloop.association.properties.agent_name
+    metrics_flush_interval: 15s
+
+  # Turns token counts on each model-call span into per-agent metrics.
+  signaltometrics:
+    spans:
+      - name: agent.llm.tokens.input
+        description: Input tokens per agent
+        unit: "{token}"
+        conditions:
+          - attributes["gen_ai.operation.name"] == "chat"
+        attributes:
+          - key: traceloop.association.properties.agent_name
+          - key: gen_ai.request.model
+        histogram:
+          buckets: [50, 100, 250, 500, 1000, 2000]
+          count: "1"
+          value: attributes["gen_ai.usage.input_tokens"]
+      - name: agent.llm.tokens.output
+        description: Output tokens per agent
+        unit: "{token}"
+        conditions:
+          - attributes["gen_ai.operation.name"] == "chat"
+        attributes:
+          - key: traceloop.association.properties.agent_name
+          - key: gen_ai.request.model
+        histogram:
+          buckets: [50, 100, 250, 500, 1000, 2000]
+          count: "1"
+          value: attributes["gen_ai.usage.output_tokens"]
+
 service:
   extensions: [health_check]
   pipelines:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, batch, resourcedetection]
-      exporters: [otlp/tempo]
+      exporters: [otlp/tempo, spanmetrics, signaltometrics]
 
     metrics:
-      receivers: [otlp]
-      processors: [memory_limiter, batch, resourcedetection]
+      receivers: [otlp, spanmetrics, signaltometrics]
+      processors: [memory_limiter, deltatocumulative, batch, resourcedetection]
       exporters: [prometheus]
 
     logs:
