@@ -106,7 +106,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "round(sum(increase(traces_span_metrics_calls_total{span_name=\"POST /travel/plan\"}[$__range])))",
+          "expr": "round((sum(traces_span_metrics_calls_total{span_name=\"POST /travel/plan\"}) - (sum(traces_span_metrics_calls_total{span_name=\"POST /travel/plan\"} offset $__range) or vector(0))))",
           "legendFormat": "plans",
           "refId": "A",
           "instant": true,
@@ -170,7 +170,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "round(sum(increase(gen_ai_client_operation_duration_seconds_count[$__range])))",
+          "expr": "round((sum(gen_ai_client_operation_duration_seconds_count) - (sum(gen_ai_client_operation_duration_seconds_count offset $__range) or vector(0))))",
           "legendFormat": "calls",
           "refId": "A",
           "instant": true,
@@ -234,7 +234,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(gen_ai_client_token_usage_sum[$__range]))",
+          "expr": "(sum(gen_ai_client_token_usage_sum) - (sum(gen_ai_client_token_usage_sum offset $__range) or vector(0)))",
           "legendFormat": "tokens",
           "refId": "A",
           "instant": true,
@@ -299,7 +299,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(traces_span_metrics_duration_seconds_sum{span_name=\"POST /travel/plan\"}[$__range])) / sum(increase(traces_span_metrics_duration_seconds_count{span_name=\"POST /travel/plan\"}[$__range]))",
+          "expr": "(sum(traces_span_metrics_duration_seconds_sum{span_name=\"POST /travel/plan\"}) - (sum(traces_span_metrics_duration_seconds_sum{span_name=\"POST /travel/plan\"} offset $__range) or vector(0))) / (sum(traces_span_metrics_duration_seconds_count{span_name=\"POST /travel/plan\"}) - (sum(traces_span_metrics_duration_seconds_count{span_name=\"POST /travel/plan\"} offset $__range) or vector(0)))",
           "legendFormat": "avg",
           "refId": "A",
           "instant": true,
@@ -364,7 +364,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "(sum(increase(gen_ai_client_token_usage_sum{gen_ai_token_type=\"input\"}[$__range])) * $price_in + sum(increase(gen_ai_client_token_usage_sum{gen_ai_token_type=\"output\"}[$__range])) * $price_out) / 1000000 / sum(increase(traces_span_metrics_calls_total{span_name=\"POST /travel/plan\"}[$__range]))",
+          "expr": "((sum(gen_ai_client_token_usage_sum{gen_ai_token_type=\"input\"}) - (sum(gen_ai_client_token_usage_sum{gen_ai_token_type=\"input\"} offset $__range) or vector(0))) * $price_in + (sum(gen_ai_client_token_usage_sum{gen_ai_token_type=\"output\"}) - (sum(gen_ai_client_token_usage_sum{gen_ai_token_type=\"output\"} offset $__range) or vector(0))) * $price_out) / 1000000 / (sum(traces_span_metrics_calls_total{span_name=\"POST /travel/plan\"}) - (sum(traces_span_metrics_calls_total{span_name=\"POST /travel/plan\"} offset $__range) or vector(0)))",
           "legendFormat": "cost",
           "refId": "A",
           "instant": true,
@@ -429,7 +429,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "topk(1, sum by (agent) (label_replace(increase(traces_span_metrics_duration_seconds_sum{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"}[$__range]),\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) / sum by (agent) (label_replace(increase(traces_span_metrics_duration_seconds_count{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"}[$__range]),\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")))",
+          "expr": "topk(1, (sum by (agent) (label_replace(traces_span_metrics_duration_seconds_sum{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"},\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) - (sum by (agent) (label_replace(traces_span_metrics_duration_seconds_sum{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"} offset $__range,\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) or sum by (agent) (label_replace(traces_span_metrics_duration_seconds_sum{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"},\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) * 0)) / (sum by (agent) (label_replace(traces_span_metrics_duration_seconds_count{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"},\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) - (sum by (agent) (label_replace(traces_span_metrics_duration_seconds_count{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"} offset $__range,\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) or sum by (agent) (label_replace(traces_span_metrics_duration_seconds_count{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"},\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) * 0)))",
           "legendFormat": "{{agent}}",
           "refId": "A",
           "instant": true,
@@ -507,7 +507,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (agent) (label_replace(increase(traces_span_metrics_duration_seconds_sum{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"}[$__range]),\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) / sum by (agent) (label_replace(increase(traces_span_metrics_duration_seconds_count{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"}[$__range]),\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\"))",
+          "expr": "(sum by (agent) (label_replace(traces_span_metrics_duration_seconds_sum{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"},\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) - (sum by (agent) (label_replace(traces_span_metrics_duration_seconds_sum{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"} offset $__range,\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) or sum by (agent) (label_replace(traces_span_metrics_duration_seconds_sum{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"},\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) * 0)) / (sum by (agent) (label_replace(traces_span_metrics_duration_seconds_count{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"},\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) - (sum by (agent) (label_replace(traces_span_metrics_duration_seconds_count{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"} offset $__range,\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) or sum by (agent) (label_replace(traces_span_metrics_duration_seconds_count{span_name=~\"execute_task (coordinator|flight_specialist|hotel_specialist|activity_specialist|plan_synthesizer)\"},\"agent\",\"$1\",\"span_name\",\"execute_task (.*)\")) * 0))",
           "legendFormat": "{{agent}}",
           "refId": "A",
           "instant": true,
@@ -548,9 +548,8 @@
       }
     },
     {
-      "type": "bargauge",
+      "type": "barchart",
       "title": "Who spends the tokens",
-      "description": "Input (blue) and output (coral) tokens per agent. Specialists read a lot; the coordinator and synthesizer write a lot.",
       "id": 10,
       "gridPos": {
         "x": 8,
@@ -562,45 +561,71 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
+      "description": "Input (blue) and output (coral) tokens per agent. Specialists read a lot; the coordinator and synthesizer write a lot.",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (traceloop_association_properties_agent_name) (increase(agent_llm_tokens_input_sum[$__range]))",
-          "legendFormat": "{{traceloop_association_properties_agent_name}} in",
+          "expr": "(sum by (traceloop_association_properties_agent_name) (agent_llm_tokens_input_sum) - (sum by (traceloop_association_properties_agent_name) (agent_llm_tokens_input_sum offset $__range) or sum by (traceloop_association_properties_agent_name) (agent_llm_tokens_input_sum) * 0))",
+          "legendFormat": "",
           "refId": "A",
           "instant": true,
-          "range": false
+          "range": false,
+          "format": "table"
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (traceloop_association_properties_agent_name) (increase(agent_llm_tokens_output_sum[$__range]))",
-          "legendFormat": "{{traceloop_association_properties_agent_name}} out",
+          "expr": "(sum by (traceloop_association_properties_agent_name) (agent_llm_tokens_output_sum) - (sum by (traceloop_association_properties_agent_name) (agent_llm_tokens_output_sum offset $__range) or sum by (traceloop_association_properties_agent_name) (agent_llm_tokens_output_sum) * 0))",
+          "legendFormat": "",
           "refId": "B",
           "instant": true,
-          "range": false
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "traceloop_association_properties_agent_name",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time 1": true,
+              "Time 2": true
+            },
+            "renameByName": {
+              "traceloop_association_properties_agent_name": "agent",
+              "Value #A": "input tokens",
+              "Value #B": "output tokens"
+            }
+          }
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "min": 0,
-          "decimals": 1,
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#d5f36a"
+          "decimals": 0,
+          "custom": {
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "axisPlacement": "auto"
           }
         },
         "overrides": [
           {
             "matcher": {
               "id": "byRegexp",
-              "options": ".* in"
+              "options": "input tokens"
             },
             "properties": [
               {
@@ -615,7 +640,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": ".* out"
+              "options": "output tokens"
             },
             "properties": [
               {
@@ -630,23 +655,22 @@
         ]
       },
       "options": {
-        "displayMode": "gradient",
         "orientation": "horizontal",
-        "showUnfilled": true,
-        "valueMode": "color",
-        "namePlacement": "top",
-        "minVizHeight": 16,
-        "minVizWidth": 8,
-        "sizing": "auto",
+        "xField": "agent",
+        "barWidth": 0.85,
+        "groupWidth": 0.75,
+        "stacking": "none",
+        "showValue": "always",
+        "xTickLabelRotation": 0,
+        "fullHighlight": false,
         "legend": {
-          "showLegend": false
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
         }
       }
     },
@@ -923,7 +947,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (le) (increase(traces_span_metrics_duration_seconds_bucket{span_name=\"ChatBedrockConverse.chat\"}[$__rate_interval]))",
+          "expr": "sum by (le) (increase(traces_span_metrics_duration_seconds_bucket{gen_ai_operation_name=\"chat\"}[$__rate_interval]))",
           "legendFormat": "{{le}}",
           "refId": "A",
           "format": "heatmap"
@@ -1033,9 +1057,8 @@
       }
     },
     {
-      "type": "bargauge",
+      "type": "barchart",
       "title": "Where travellers are going",
-      "description": "Destinations planned in the selected range, counted from application logs (Loki).",
       "id": 18,
       "gridPos": {
         "x": 12,
@@ -1047,6 +1070,7 @@
         "type": "loki",
         "uid": "loki"
       },
+      "description": "Destinations planned in the selected range, counted from application logs (Loki).",
       "targets": [
         {
           "datasource": {
@@ -1059,36 +1083,60 @@
           "queryType": "instant"
         }
       ],
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Value",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "min": 0,
-          "decimals": 1,
+          "decimals": 0,
           "color": {
             "mode": "fixed",
             "fixedColor": "#83d8c4"
+          },
+          "custom": {
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "axisPlacement": "hidden",
+            "axisGridShow": false
           }
         },
         "overrides": []
       },
       "options": {
-        "displayMode": "gradient",
-        "orientation": "horizontal",
-        "showUnfilled": true,
-        "valueMode": "color",
-        "namePlacement": "top",
-        "minVizHeight": 16,
-        "minVizWidth": 8,
-        "sizing": "auto",
+        "orientation": "vertical",
+        "xField": "destination",
+        "barWidth": 0.7,
+        "groupWidth": 0.8,
+        "stacking": "none",
+        "showValue": "always",
+        "xTickLabelRotation": -45,
         "legend": {
           "showLegend": false
         },
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "tooltip": {
+          "mode": "single"
         }
       }
     },
@@ -1188,10 +1236,14 @@
         "overrides": [
           {
             "matcher": {
-              "id": "byRegexp",
-              "options": "clean"
+              "id": "byFrameRefID",
+              "options": "A"
             },
             "properties": [
+              {
+                "id": "displayName",
+                "value": "clean"
+              },
               {
                 "id": "color",
                 "value": {
@@ -1203,10 +1255,14 @@
           },
           {
             "matcher": {
-              "id": "byRegexp",
-              "options": "perturbed"
+              "id": "byFrameRefID",
+              "options": "B"
             },
             "properties": [
+              {
+                "id": "displayName",
+                "value": "perturbed"
+              },
               {
                 "id": "color",
                 "value": {
