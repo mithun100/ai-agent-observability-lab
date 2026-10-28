@@ -9,12 +9,17 @@
   "panels": [
     {
       "type": "timeseries",
-      "title": "GenAI Operations Per Second",
+      "title": "GenAI Operations in Previous 5 Minutes",
+      "description": "Estimated model operations during the rolling five-minute window. One travel-plan request may generate multiple model operations.",
       "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {"unit": "short", "min": 0},
+        "overrides": []
+      },
       "targets": [
         {
-          "expr": "sum by (gen_ai_provider_name, gen_ai_response_model) (increase(gen_ai_client_operation_duration_seconds_count[5m]))",
+          "expr": "round(sum by (gen_ai_provider_name, gen_ai_response_model) (increase(gen_ai_client_operation_duration_seconds_count[5m])))",
           "legendFormat": "{{gen_ai_provider_name}} | {{gen_ai_response_model}}",
           "refId": "A"
         }
