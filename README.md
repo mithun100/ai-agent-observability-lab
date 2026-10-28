@@ -6,19 +6,18 @@ This repository is structured for public use with a single canonical runtime pat
 ## Canonical Structure
 
 - app/: application source code
-- observability/: collector profiles, Docker stack, Kubernetes manifests, smoke validation
+- observability/: collector profiles, Docker stack, smoke validation
 - scripts/: helper scripts
 - archive/: deprecated or legacy folders kept for reference only
 
 ## What To Use
 
-Use observability/ for all active local and Kubernetes workflows.
+Use observability/ for the active local Docker workflow.
 Do not use folders under archive/ for normal runs.
 
 ## Prerequisites
 
 - Docker Desktop with Docker Compose v2
-- Optional: kubectl + local Kubernetes (for k8s validation)
 - Credentials in .env for your chosen LLM backend
 
 ## Setup
@@ -86,7 +85,7 @@ Send a request:
 ```bash
 curl -sS -X POST http://localhost:8080/travel/plan \
   -H "Content-Type: application/json" \
-  -d '{"source":"Bengaluru","destination":"Tokyo","date":"2026-12-10"}'
+  -d '{"origin":"Bengaluru","destination":"Tokyo","travellers":2}'
 ```
 
 Expected:
@@ -138,56 +137,6 @@ docker compose --env-file .env -f observability/docker/docker-compose.yaml up -d
 ```bash
 chmod +x observability/smoke/validate_backend.sh
 OBSERVABILITY_BACKEND=oss ./observability/smoke/validate_backend.sh
-```
-
-## Kubernetes (Local)
-
-Important scope note:
-
-- This section is for local Docker Desktop Kubernetes only.
-- Do not use this local hybrid port-forward pattern for EKS, GKE, or AKS.
-
-Bootstrap Bedrock secret and local image first:
-
-```bash
-chmod +x scripts/k8s-secrets.sh
-./scripts/k8s-secrets.sh
-docker build -t travel-planner:latest app
-```
-
-Deploy OSS overlay:
-
-```bash
-kubectl apply -k observability/k8s/overlays/oss
-```
-
-Check rollout:
-
-```bash
-kubectl get pods
-kubectl get svc
-```
-
-Test app via port-forward:
-
-```bash
-chmod +x scripts/k8s-forward-local.sh
-./scripts/k8s-forward-local.sh start all
-./scripts/k8s-forward-local.sh status
-```
-
-In another terminal:
-
-```bash
-curl -sS -X POST http://localhost:18080/travel/plan \
-  -H "Content-Type: application/json" \
-  -d '{"source":"Seattle","destination":"Tokyo","date":"2026-12-10"}'
-```
-
-Stop local forwards when done:
-
-```bash
-./scripts/k8s-forward-local.sh stop all
 ```
 
 ## Notes For Public Repo

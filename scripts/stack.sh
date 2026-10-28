@@ -58,20 +58,7 @@ case "${ACTION}" in
     docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" config "$@"
     ;;
   health)
-    planner_ok=0
-    for _ in {1..12}; do
-      planner_code="$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/travel/plan || true)"
-      if [[ "${planner_code}" == "200" || "${planner_code}" == "405" ]]; then
-        echo "[OK] travel-planner: http://localhost:8080/travel/plan (HTTP ${planner_code})"
-        planner_ok=1
-        break
-      fi
-      sleep 2
-    done
-    if [[ "${planner_ok}" -ne 1 ]]; then
-      echo "[FAIL] travel-planner: http://localhost:8080/travel/plan (HTTP ${planner_code:-000})"
-      exit 1
-    fi
+    check_http "travel-planner" "http://localhost:8080/health"
     check_http "prometheus" "http://localhost:9090/-/healthy"
     check_http "tempo" "http://localhost:3200/ready"
     check_http "loki" "http://localhost:3100/ready"
@@ -80,7 +67,7 @@ case "${ACTION}" in
     status="$(curl -sS -o /tmp/travel-plan-response.json -w "%{http_code}" \
       -X POST http://localhost:8080/travel/plan \
       -H "Content-Type: application/json" \
-      -d '{"source":"Bengaluru","destination":"Tokyo","date":"2026-12-10"}')"
+      -d '{"origin":"Bengaluru","destination":"Tokyo","travellers":2}')"
     if [[ "${status}" != "200" ]]; then
       echo "[FAIL] /travel/plan returned HTTP ${status}"
       cat /tmp/travel-plan-response.json

@@ -987,7 +987,7 @@ def plan():
 
 @app.route("/health", methods=["GET"])
 def health():
-    """Health check endpoint for k8s."""
+    """Health check endpoint for the application."""
     return jsonify({"status": "healthy", "service": "travel-planner-flask"}), 200
 
 
