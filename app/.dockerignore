@@ -1,0 +1,29 @@
+# Prevent accidental secret and local artifact inclusion in image builds
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+
+# Python caches and virtualenvs
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Tooling/test artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# VCS/editor/macOS files
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
