@@ -8,12 +8,10 @@ This repository is structured for public use with a single canonical runtime pat
 - app/: application source code
 - observability/: Docker stack and telemetry dashboards
 - scripts/: helper scripts
-- archive/: deprecated or legacy folders kept for reference only
 
 ## What To Use
 
 Use observability/ for the active local Docker workflow.
-Do not use folders under archive/ for normal runs.
 
 ## Prerequisites
 
